@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alta / Modificación de Producto — Hertool</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0,0,0,.10);
+      width: 100%;
+      max-width: 680px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: #1a3a5c;
+      color: #fff;
+      padding: 24px 32px;
+    }
+    .card-header h1 { font-size: 1.25rem; font-weight: 700; }
+    .card-header p  { font-size: 0.85rem; opacity: .75; margin-top: 4px; }
+
+    .card-body { padding: 32px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    label .req { color: #dc2626; }
+
+    input[type=text], input[type=number], select {
+      width: 100%;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      color: #111827;
+      transition: border-color .15s;
+      background: #fff;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #1a3a5c;
+    }
+    input.error, .choices.error .choices__inner {
+      border-color: #dc2626 !important;
+    }
+    .field-error {
+      color: #dc2626;
+      font-size: 0.75rem;
+      margin-top: 4px;
+      display: none;
+    }
+    .field-error.visible { display: block; }
+
+    /* Choices.js override */
+    .choices__inner {
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      min-height: 42px;
+      background: #fff;
+    }
+    .choices.is-focused .choices__inner {
+      border-color: #1a3a5c;
+      box-shadow: none;
+    }
+    .choices__list--dropdown { border-radius: 8px; border: 1.5px solid #d1d5db; }
+    .choices__list--dropdown .choices__item--selectable.is-highlighted { background: #1a3a5c; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #e5e7eb;
+      margin: 24px 0;
+    }
+
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #6b7280;
+      margin-bottom: 16px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 13px;
+      background: #1a3a5c;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 24px;
+      transition: background .15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-submit:hover  { background: #14305a; }
+    .btn-submit:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+    .btn-submit.loading .spinner { display: block; }
+    .btn-submit.loading .btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .alert {
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 0.875rem;
+      margin-top: 20px;
+      display: none;
+    }
+    .alert.visible { display: flex; align-items: flex-start; gap: 10px; }
+    .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .alert-error   { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .alert-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+    .loading-overlay {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+
+    /* Imagen upload */
+    .imagen-upload-area {
+      border: 2px dashed #d1d5db;
+      border-radius: 10px;
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      position: relative;
+    }
+    .imagen-upload-area:hover,
+    .imagen-upload-area.drag-over {
+      border-color: #1a3a5c;
+      background: #f0f5ff;
+    }
+    .imagen-upload-area input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .imagen-upload-icon { font-size: 2rem; margin-bottom: 8px; }
+    .imagen-upload-text { font-size: 0.85rem; color: #6b7280; }
+    .imagen-upload-text strong { color: #1a3a5c; }
+    .imagen-size-hint { font-size: 0.75rem; color: #9ca3af; margin-top: 4px; }
+
+    .imagen-preview {
+      display: none;
+      margin-top: 12px;
+      position: relative;
+    }
+    .imagen-preview.visible { display: block; }
+    .imagen-preview img {
+      max-height: 160px;
+      max-width: 100%;
+      border-radius: 8px;
+      object-fit: contain;
+      border: 1px solid #e5e7eb;
+    }
+    .imagen-remove {
+      position: absolute; top: -8px; right: -8px;
+      background: #dc2626; color: #fff;
+      border: none; border-radius: 50%;
+      width: 24px; height: 24px;
+      font-size: 0.8rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="card-header">
+    <h1>Alta / Modificación de Producto</h1>
+    <p>Si la clave ya existe se actualizará el producto; si no, se dará de alta.</p>
+  </div>
+
+  <div class="card-body" id="form-wrapper">
+    <div class="loading-overlay" id="loading-catalogos">Cargando catálogos…</div>
+
+    <form id="producto-form" style="display:none" novalidate>
+
+      <p class="section-title">Identificación</p>
+      <div class="form-grid">
+        <div class="full">
+          <label for="clave">Clave del producto <span class="req">*</span></label>
+          <input type="text" id="clave" name="clave" placeholder="Ej: HT-001" autocomplete="off">
+          <div class="field-error" id="err-clave">La clave es requerida.</div>
+        </div>
+        <div class="full">
+          <label for="descripcion">Descripción <span class="req">*</span></label>
+          <input type="text" id="descripcion" name="descripcion" placeholder="Descripción completa del producto">
+          <div class="field-error" id="err-descripcion">La descripción es requerida.</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <p class="section-title">Precios y empaque</p>
+      <div class="form-grid">
+        <div>
+          <label for="precio1">Precio 1 <span class="req">*</span></label>
+          <input type="number" id="precio1" name="precio1" min="0" step="0.01" placeholder="0.00">
+          <div class="field-error" id="err-precio1">Ingresa un precio válido.</div>
+        </div>
+        <div>
+          <label for="costoBase">Costo base</label>
+          <input type="number" id="costoBase" name="costoBase" min="0" step="0.01" placeholder="0.00">
+        </div>
+        <div>
+          <label for="unidadesEmpaque">Unidades por empaque</label>
+          <input type="number" id="unidadesEmpaque" name="unidadesEmpaque" min="1" step="1" value="1">
+        </div>
+        <div>
+          <label for="marca">Marca</label>
+          <input type="text" id="marca" name="marca" placeholder="Ej: SANDVIK">
+        </div>
+      </div>
+
+      <hr class="divider">
+      <p class="section-title">Clasificación</p>
+      <div class="form-grid">
+        <div>
+          <label for="unidadMedida">Unidad de medida <span class="req">*</span></label>
+          <select id="unidadMedida" name="unidadMedida">
+            <option value="Pieza">Pieza</option>
+            <option value="Set">Set</option>
+          </select>
+        </div>
+        <div>
+          <label for="moneda">Moneda <span class="req">*</span></label>
+          <select id="moneda" name="moneda">
+            <option value="PESOS">PESOS</option>
+            <option value="DOLARES">DÓLARES</option>
+            <option value="EUROS">EUROS</option>
+          </select>
+        </div>
+        <div>
+          <label for="familia">Familia <span class="req">*</span></label>
+          <select id="familia" name="familia"></select>
+          <div class="field-error" id="err-familia">Selecciona una familia.</div>
+        </div>
+        <div>
+          <label for="proveedor">Proveedor <span class="req">*</span></label>
+          <select id="proveedor" name="proveedor"></select>
+          <div class="field-error" id="err-proveedor">Selecciona un proveedor.</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <p class="section-title">Imagen del producto</p>
+      <div class="form-grid">
+        <div class="full">
+          <label>Foto del producto <span style="font-weight:400;color:#6b7280;">(opcional · máx. 5 MB)</span></label>
+          <div class="imagen-upload-area" id="imagen-drop-area">
+            <input type="file" id="imagen" accept="image/*">
+            <div class="imagen-upload-icon">🖼️</div>
+            <div class="imagen-upload-text"><strong>Selecciona una imagen</strong> o arrastra aquí</div>
+            <div class="imagen-size-hint">JPG, PNG, WebP — máximo 5 MB</div>
+          </div>
+          <div class="imagen-preview" id="imagen-preview">
+            <img id="imagen-preview-img" src="" alt="Preview">
+            <button type="button" class="imagen-remove" id="imagen-remove" title="Quitar imagen">✕</button>
+          </div>
+          <div class="field-error" id="err-imagen">La imagen supera los 5 MB. Elige una más pequeña.</div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="btn-submit">
+        <div class="spinner"></div>
+        <span class="btn-text">Guardar producto</span>
+      </button>
+
+      <div class="alert alert-success" id="alert-ok">
+        <span class="alert-icon">✅</span>
+        <div id="alert-ok-msg">Producto guardado correctamente.</div>
+      </div>
+      <div class="alert alert-error" id="alert-err">
+        <span class="alert-icon">❌</span>
+        <div id="alert-err-msg">Ocurrió un error. Inténtalo de nuevo.</div>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script>
+  const API_CATALOGOS = 'https://n8n.xavico.mx/webhook/catalogos-hertool';
+  const API_SUBMIT    = 'https://n8n.xavico.mx/webhook/alta-producto-hertool';
+  const MAX_IMG_BYTES = 5 * 1024 * 1024; // 5 MB
+
+  let choicesFamilia, choicesProveedor;
+  let imagenBase64 = null, imagenMime = null, imagenNombre = null;
+
+  function handleImagenFile(file) {
+    if (!file) return;
+    const errEl = document.getElementById('err-imagen');
+    if (file.size > MAX_IMG_BYTES) {
+      errEl.classList.add('visible');
+      limpiarImagen();
+      return;
+    }
+    errEl.classList.remove('visible');
+    imagenMime   = file.type || 'image/jpeg';
+    imagenNombre = file.name;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      imagenBase64  = dataUrl.split(',')[1]; // solo la parte base64, sin prefijo
+      document.getElementById('imagen-preview-img').src = dataUrl;
+      document.getElementById('imagen-preview').classList.add('visible');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function limpiarImagen() {
+    imagenBase64 = imagenMime = imagenNombre = null;
+    document.getElementById('imagen').value = '';
+    document.getElementById('imagen-preview').classList.remove('visible');
+    document.getElementById('imagen-preview-img').src = '';
+  }
+
+  document.getElementById('imagen').addEventListener('change', (e) => {
+    handleImagenFile(e.target.files[0]);
+  });
+  document.getElementById('imagen-remove').addEventListener('click', limpiarImagen);
+
+  // Drag & drop
+  const dropArea = document.getElementById('imagen-drop-area');
+  dropArea.addEventListener('dragover',  (e) => { e.preventDefault(); dropArea.classList.add('drag-over'); });
+  dropArea.addEventListener('dragleave', ()  => dropArea.classList.remove('drag-over'));
+  dropArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropArea.classList.remove('drag-over');
+    handleImagenFile(e.dataTransfer.files[0]);
+  });
+
+  async function init() {
+    try {
+      const res  = await fetch(API_CATALOGOS);
+      const data = await res.json();
+
+      // Poblar familia
+      const selFamilia = document.getElementById('familia');
+      selFamilia.innerHTML = '<option value="">-- Selecciona --</option>' +
+        data.familias.map(f => `<option value="${f}">${f}</option>`).join('');
+
+      // Poblar proveedor
+      const selProveedor = document.getElementById('proveedor');
+      selProveedor.innerHTML = '<option value="">-- Selecciona --</option>' +
+        data.proveedores.map(p => `<option value="${p}">${p}</option>`).join('');
+
+      // Inicializar Choices.js con búsqueda
+      choicesFamilia = new Choices('#familia', {
+        searchEnabled: true, searchPlaceholderValue: 'Buscar familia…',
+        itemSelectText: '', noResultsText: 'Sin resultados',
+        shouldSort: false
+      });
+      choicesProveedor = new Choices('#proveedor', {
+        searchEnabled: true, searchPlaceholderValue: 'Buscar proveedor…',
+        itemSelectText: '', noResultsText: 'Sin resultados',
+        shouldSort: false
+      });
+
+      document.getElementById('loading-catalogos').style.display = 'none';
+      document.getElementById('producto-form').style.display = 'block';
+    } catch (e) {
+      document.getElementById('loading-catalogos').textContent =
+        'Error al cargar los catálogos. Recarga la página.';
+    }
+  }
+
+  function validate() {
+    let ok = true;
+    const check = (id, errId, fn) => {
+      const el  = document.getElementById(id);
+      const err = document.getElementById(errId);
+      if (!fn(el.value)) {
+        el.classList.add('error');
+        err.classList.add('visible');
+        ok = false;
+      } else {
+        el.classList.remove('error');
+        err.classList.remove('visible');
+      }
+    };
+    check('clave',       'err-clave',       v => v.trim().length > 0);
+    check('descripcion', 'err-descripcion', v => v.trim().length > 0);
+    check('precio1',     'err-precio1',     v => v !== '' && parseFloat(v) >= 0);
+
+    // Choices.js selects — validar via value directo
+    const familia   = choicesFamilia.getValue(true);
+    const proveedor = choicesProveedor.getValue(true);
+
+    const errFam = document.getElementById('err-familia');
+    const errPro = document.getElementById('err-proveedor');
+
+    if (!familia) { errFam.classList.add('visible'); ok = false; }
+    else          { errFam.classList.remove('visible'); }
+
+    if (!proveedor) { errPro.classList.add('visible'); ok = false; }
+    else            { errPro.classList.remove('visible'); }
+
+    return ok;
+  }
+
+  document.getElementById('producto-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideAlerts();
+    if (!validate()) return;
+
+    const btn = document.getElementById('btn-submit');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    const payload = {
+      clave:           document.getElementById('clave').value.trim().toUpperCase(),
+      descripcion:     document.getElementById('descripcion').value.trim(),
+      precio1:         parseFloat(document.getElementById('precio1').value) || 0,
+      costoBase:       parseFloat(document.getElementById('costoBase').value) || 0,
+      unidadesEmpaque: parseInt(document.getElementById('unidadesEmpaque').value) || 1,
+      marca:           document.getElementById('marca').value.trim(),
+      unidadMedida:    document.getElementById('unidadMedida').value,
+      moneda:          document.getElementById('moneda').value,
+      familia:         choicesFamilia.getValue(true),
+      proveedor:       choicesProveedor.getValue(true),
+      ...(imagenBase64 ? {
+        imagen_base64:  imagenBase64,
+        imagen_mime:    imagenMime,
+        imagen_nombre:  imagenNombre,
+      } : {})
+    };
+
+    try {
+      const res  = await fetch(API_SUBMIT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (res.ok && data.ok) {
+        const accion = data.accion === 'MODIFICAR' ? 'actualizado' : 'dado de alta';
+        showOk(`Producto <strong>${payload.clave}</strong> ${accion} correctamente.`);
+        document.getElementById('producto-form').reset();
+        choicesFamilia.setChoiceByValue('');
+        choicesProveedor.setChoiceByValue('');
+        limpiarImagen();
+      } else {
+        showErr(data.message || data.error || 'Error desconocido del servidor.');
+      }
+    } catch (err) {
+      showErr('No se pudo conectar con el servidor. Verifica tu red.');
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  });
+
+  function hideAlerts() {
+    document.getElementById('alert-ok').classList.remove('visible');
+    document.getElementById('alert-err').classList.remove('visible');
+  }
+  function showOk(msg) {
+    document.getElementById('alert-ok-msg').innerHTML = msg;
+    document.getElementById('alert-ok').classList.add('visible');
+    document.getElementById('alert-ok').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  function showErr(msg) {
+    document.getElementById('alert-err-msg').textContent = msg;
+    document.getElementById('alert-err').classList.add('visible');
+    document.getElementById('alert-err').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  init();
+</script>
+</body>
+</html>
